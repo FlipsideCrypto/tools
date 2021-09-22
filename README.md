@@ -1,2 +1,2 @@
 # tools
-private repository for tools
+public repository for tools
