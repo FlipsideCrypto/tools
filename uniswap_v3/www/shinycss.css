@@ -1,0 +1,128 @@
+
+body {
+  background: url('Background_03.png');
+  background-attachment:fixed;
+  background-size: auto 100%;
+  background-position: center;
+  padding-left: 10%;
+  padding-right: 10%;
+}
+
+#lildate {
+  margin-top: -15px;
+  padding-top: 0;
+  padding-bottom: 10px;
+  color: #8A9391;
+  font-size: 0.8em;
+}
+
+.smallstats {
+  color: #8A9391;
+  font-size: 0.9em;
+}
+
+.selectize-input {
+  margin-bottom: 0px;
+  padding-bottom: 0px;
+}
+.selectize-control {
+  padding-bottom: 0px;
+  margin-bottom: 0px;
+}
+
+
+#fee {
+  text-align: center;
+  
+  height: calc(1.5em + .75rem + 2px);
+  padding: .375rem .75rem;
+  font-size: 1.03rem;
+  font-weight: 900;
+  line-height: 1.5;
+  color: #9933cc;
+  background-color: #e7d3f2;
+  background-clip: padding-box;
+  border: 2px solid #815c99;
+  border-radius: .25rem;
+}
+
+.irs-handle {
+  background-color: #acf3e4 !important;
+  border: 1px solid #acf3e4 !important;
+}
+
+#dates {
+  width: 90%;
+  margin: auto;
+  align: center;
+  text-align: center;
+}
+
+#lcurveselect {
+  width: 90%;
+  margin: auto;
+  align: center;
+  text-align: center;
+}
+
+#lpamt {
+  width: 90%;
+  text-align: center;
+  
+  height: calc(1.5em + .75rem + 2px);
+    padding: .375rem .75rem;
+    font-size: 1rem;
+    font-weight: 600;
+    line-height: 1.5;
+    color: #55454E;
+    background-color: #acf3e4;
+    background-clip: padding-box;
+    border: 1px solid #98879A;
+    border-radius: .25rem;
+    
+}
+#moveprice {
+  width: 90%;
+  margin: auto;
+  align: center;
+  text-align: center;
+}
+
+.fa {
+  vertical-align: top;
+  size: 0.25em !important;
+}
+
+.irs-bar--single {
+  background-color: #e7d3f2 !important;
+  border: 1px solid #d3bfdb !important;
+  border-radius: 8px !important;
+}
+
+#disclaimer {
+  text-align: justify;
+  color: #5c5760;
+}
+
+.centerit {
+  vertical-align: middle !important;
+}
+
+#equals {
+  size: 6em;
+  font-weight: 600;
+}
+
+h4 {
+  margin-top: 0px !important;
+  margin-bottom: 0px !important;
+}
+
+#uni {
+  font-size: 1.9em !important;
+  margin-top: 0;
+  padding-top: 0;
+  vertical-align: top;
+}
+
+
