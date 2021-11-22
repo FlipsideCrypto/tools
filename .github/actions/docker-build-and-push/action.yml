@@ -1,0 +1,42 @@
+name: 'docker-build-and-push'
+description: 'Docker build and push'
+inputs:
+  service-name:
+    description: 'Service name'
+    required: true
+outputs:
+  branch-name:
+    description: "Branch name"
+    value: ${{ steps.branch-specific-config.outputs.branch-name }}
+  image-rev:
+    description: "Docker image revision"
+    value: ${{ steps.branch-specific-config.outputs.image-rev }}
+  tf-workingdir:
+    description: "Terraform working directory"
+    value: ${{ steps.branch-specific-config.outputs.tf-workingdir }}
+  tf-lockfile:
+    description: "Terraform lockfile"
+    value: ${{ steps.branch-specific-config.outputs.tf-lockfile }}
+  docker-load:
+    description: "Docker load"
+    value: ${{ steps.branch-specific-config.outputs.docker-load }}
+  docker-push:
+    description: "Docker push"
+    value: ${{ steps.branch-specific-config.outputs.docker-push }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Login to Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v1
+    - name: Branch specific config
+      uses: ./.github/actions/branch-specific-config
+      id: branch-specific-config
+    - name: Build image
+      uses: docker/build-push-action@v2
+      with:
+        context: ./services/${{ inputs.service-name }}
+        load: ${{ steps.branch-specific-config.outputs.docker-load }}
+        push: ${{ steps.branch-specific-config.outputs.docker-push }}
+        tags: ${{ steps.login-ecr.outputs.registry }}/${{ inputs.service-name }}:${{ steps.branch-specific-config.outputs.image-rev }}
