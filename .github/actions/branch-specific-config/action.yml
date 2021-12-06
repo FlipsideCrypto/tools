@@ -33,13 +33,17 @@ runs:
 
         PREFIX="refs/heads/"
         BRANCH_NAME="${GITHUB_REF#"$PREFIX"}"
-        IMAGE_REV="staging"
-        TF_WD="terraform/workspaces/stg"
 
-        if [ "${BRANCH_NAME}" = "main" ]; then
-          echo "Running production build"
-          IMAGE_REV="latest"
-          TF_WD="terraform/workspaces/prod"
+        ret=0
+        git ls-remote --exit-code origin staging || ret=$?
+        if [ "${BRANCH_NAME}" = "main" ] || [ "${ret}" -eq 2 ]; then
+            echo "Running production build or running build in repo without a staging branch"
+            IMAGE_REV="latest"
+            TF_WD="terraform/workspaces/prod"
+        else
+            echo "Running staging build"
+            IMAGE_REV="staging"
+            TF_WD="terraform/workspaces/stg"
         fi
 
         TF_LF="${TF_WD}/.terraform.lock.hcl"
