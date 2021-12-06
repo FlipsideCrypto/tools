@@ -1,0 +1,62 @@
+# File managed by Terraform
+# Contents will be overwritten automatically
+# To make changes edit the original template in internal-organization
+
+name: 'branch-specific-config'
+description: 'Determine branch-specific configuration'
+outputs:
+  branch-name:
+    description: "Branch name"
+    value: ${{ steps.branch-specific-config.outputs.branch-name }}
+  image-rev:
+    description: "Docker image revision"
+    value: ${{ steps.branch-specific-config.outputs.image-rev }}
+  tf-workingdir:
+    description: "Terraform working directory"
+    value: ${{ steps.branch-specific-config.outputs.tf-workingdir }}
+  tf-lockfile:
+    description: "Terraform lockfile"
+    value: ${{ steps.branch-specific-config.outputs.tf-lockfile }}
+  docker-load:
+    description: "Docker load"
+    value: ${{ steps.branch-specific-config.outputs.docker-load }}
+  docker-push:
+    description: "Docker push"
+    value: ${{ steps.branch-specific-config.outputs.docker-push }}
+runs:
+  using: "composite"
+  steps:
+    - name: Branch specific config
+      id: branch-specific-config
+      run: |
+        set -euxo pipefail
+
+        PREFIX="refs/heads/"
+        BRANCH_NAME="${GITHUB_REF#"$PREFIX"}"
+        IMAGE_REV="staging"
+        TF_WD="terraform/workspaces/stg"
+
+        if [ "${BRANCH_NAME}" = "main" ]; then
+          echo "Running production build"
+          IMAGE_REV="latest"
+          TF_WD="terraform/workspaces/prod"
+        fi
+
+        TF_LF="${TF_WD}/.terraform.lock.hcl"
+
+        DOCKER_LOAD="false"
+        DOCKER_PUSH="true"
+
+        if [ "${GITHUB_EVENT_NAME}" = "pull_request" ]; then
+          echo "Running a pull request - Load Docker image only, no push"
+          DOCKER_LOAD="true"
+          DOCKER_PUSH="false"
+        fi
+
+        echo "::set-output name=branch-name::$(echo $BRANCH_NAME)"
+        echo "::set-output name=image-rev::$(echo $IMAGE_REV)"
+        echo "::set-output name=tf-workingdir::$(echo $TF_WD)"
+        echo "::set-output name=tf-lockfile::$(echo $TF_LF)"
+        echo "::set-output name=docker-load::$(echo $DOCKER_LOAD)"
+        echo "::set-output name=docker-push::$(echo $DOCKER_PUSH)"
+      shell: bash
