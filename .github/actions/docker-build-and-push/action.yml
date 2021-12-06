@@ -9,6 +9,9 @@ inputs:
     description: 'Service name'
     required: true
 outputs:
+  service-name:
+    description: "Service name"
+    value: ${{ steps.docker-build-and-push-config.outputs.service-name }}
   branch-name:
     description: "Branch name"
     value: ${{ steps.branch-specific-config.outputs.branch-name }}
@@ -31,6 +34,16 @@ outputs:
 runs:
   using: "composite"
   steps:
+    - name: Docker Build nnd Push Config
+      id: docker-build-and-push-config
+      run: |
+        set -euxo pipefail
+
+        SERVICE_NAME="${{ inputs.service-name }}"
+        SERVICE_NAME_SANITIZED="${SERVICE_NAME//_/-}"
+
+        echo "::set-output name=service-name::$(echo $SERVICE_NAME_SANITIZED)"
+      shell: bash
     - name: Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v1
       with:
@@ -53,4 +66,4 @@ runs:
         context: ${{ inputs.base-dir }}/${{ inputs.service-name }}
         load: ${{ steps.branch-specific-config.outputs.docker-load }}
         push: ${{ steps.branch-specific-config.outputs.docker-push }}
-        tags: ${{ steps.login-ecr.outputs.registry }}/${{ inputs.service-name }}:${{ steps.branch-specific-config.outputs.image-rev }}
+        tags: ${{ steps.login-ecr.outputs.registry }}/${{ steps.docker-build-and-push-config.outputs.service-name }}:${{ steps.branch-specific-config.outputs.image-rev }}
