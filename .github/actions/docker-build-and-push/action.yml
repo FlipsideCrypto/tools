@@ -78,5 +78,3 @@ runs:
         load: ${{ steps.branch-specific-config.outputs.docker-load }}
         push: ${{ steps.branch-specific-config.outputs.docker-push }}
         tags: ${{ steps.login-ecr.outputs.registry }}/${{ steps.docker-build-and-push-config.outputs.repository-name }}:${{ steps.branch-specific-config.outputs.image-rev }}
-        cache-from: type=registry,ref=${{ steps.login-ecr.outputs.registry }}/${{ steps.docker-build-and-push-config.outputs.repository-name }}:buildcache
-        cache-to: type=registry,ref=${{ steps.login-ecr.outputs.registry }}/${{ steps.docker-build-and-push-config.outputs.repository-name }}:buildcache,mode=max
