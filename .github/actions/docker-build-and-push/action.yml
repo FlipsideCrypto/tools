@@ -13,6 +13,9 @@ inputs:
     required: false
     default: ''
 outputs:
+  registry:
+    description: "Registry"
+    value: ${{ steps.login-ecr.outputs.registry }}
   service-name:
     description: "Service name"
     value: ${{ steps.docker-build-and-push-config.outputs.service-name }}
