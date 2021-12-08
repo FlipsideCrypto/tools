@@ -44,7 +44,7 @@ runs:
       shell: bash
     - name: Terraform Init
       id: init
-      run: terraform init
+      run: terraform init --upgrade
       working-directory: terraform/workspaces/${{ inputs.workspace }}
       shell: bash
     - name: Terraform Validate
