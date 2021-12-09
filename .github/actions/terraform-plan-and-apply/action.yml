@@ -1,0 +1,110 @@
+# File managed by Terraform
+# Contents will be overwritten automatically
+# To make changes edit the original template in internal-organization
+
+name: 'terraform-plan-and-apply'
+description: 'Perform a Terraform plan and apply'
+inputs:
+  allow-applies-from:
+    description: 'Where to allow applies from'
+    required: true
+  workspace:
+    description: 'Workspace directory name'
+    required: true
+  github-token:
+    description: 'Github token'
+    required: true
+runs:
+  using: "composite"
+  steps:
+    - name: Use Node.js 14.x
+      uses: actions/setup-node@v2
+      with:
+        node-version: "14.x"
+    - uses: hashicorp/setup-terraform@v1
+      with:
+        terraform_version: 1.0.2
+    - name: Setup Terraform plugin cache
+      run: |
+        echo 'plugin_cache_dir="$HOME/.terraform.d/plugin-cache"' > ~/.terraformrc
+        mkdir --parents ~/.terraform.d/plugin-cache
+      shell: bash
+    - name: Cache Terraform
+      uses: actions/cache@v2
+      with:
+        path: |
+          ~/.terraform.d/plugin-cache
+        key: ${{ runner.os }}-terraform-${{ hashFiles('terraform/workspaces/${{ inputs.workspace }}/.terraform.lock.hcl') }}
+        restore-keys: |
+          ${{ runner.os }}-terraform-
+    - name: Terraform fmt
+      id: fmt
+      run: terraform fmt -recursive
+      working-directory: terraform/workspaces/${{ inputs.workspace }}
+      shell: bash
+    - name: Terraform Init
+      id: init
+      run: terraform init --upgrade
+      working-directory: terraform/workspaces/${{ inputs.workspace }}
+      shell: bash
+    - name: Terraform Validate
+      id: validate
+      run: terraform validate -no-color
+      working-directory: terraform/workspaces/${{ inputs.workspace }}
+      shell: bash
+    - name: Terraform Plan
+      id: plan
+      run: terraform plan -no-color
+      working-directory: terraform/workspaces/${{ inputs.workspace }}
+      shell: bash
+    - uses: actions/github-script@0.9.0
+      if: github.event_name == 'pull_request'
+      env:
+        PLAN: "terraform\n${{ steps.plan.outputs.stdout }}"
+      with:
+        github-token: ${{ inputs.github-token }}
+        script: |
+          const output = `#### Terraform Format and Style 🖌\`${{ steps.fmt.outcome }}\`
+          #### Terraform Initialization ⚙️\`${{ steps.init.outcome }}\`
+          #### Terraform Validation 🤖\`${{ steps.validate.outputs.stdout }}\`
+          #### Terraform Plan 📖\`${{ steps.plan.outcome }}\`
+
+          <details><summary>Show Plan</summary>
+
+          \`\`\`\n
+          ${process.env.PLAN}
+          \`\`\`
+
+          </details>
+
+          *Pusher: @${{ github.actor }}, Action: \`${{ github.event_name }}\`, Working Directory: \`working-directory: terraform/workspaces/${{ inputs.workspace }}\`, Workflow: \`${{ github.workflow }}\`*`;
+
+          github.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: output
+          })
+    - name: Terraform Apply
+      if: ( ${{ inputs.allow-applies-from }} ) && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && ( steps.plan.outcome != 'failure' )
+      run: terraform apply -auto-approve
+      working-directory: terraform/workspaces/${{ inputs.workspace }}
+      shell: bash
+    - uses: nick-invision/retry@v2
+      if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+      with:
+        timeout_seconds: 15
+        max_attempts: 3
+        retry_on: error
+        command: |
+          git clean -xdff
+          git stash -u
+          git checkout "${GITHUB_REF:11}"
+          git pull
+          git stash apply ||:
+          git config --global user.name 'Devops Bot'
+          git config --global user.email 'devops-bot@flipsidecrypto.com'
+          git remote set-url origin https://x-access-token:${{ inputs.github-token }}@github.com/$GITHUB_REPOSITORY
+          git add -A
+          git commit -am W"Updated Terraform generated files for ${{ inputs.workspace }}"
+          git push ||:
