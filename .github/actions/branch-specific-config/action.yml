@@ -11,6 +11,9 @@ outputs:
   image-rev:
     description: "Docker image revision"
     value: ${{ steps.branch-specific-config.outputs.image-rev }}
+  env:
+    description: "Environment"
+    value: ${{ steps.branch-specific-config.outputs.env }}
   tf-workingdir:
     description: "Terraform working directory"
     value: ${{ steps.branch-specific-config.outputs.tf-workingdir }}
@@ -39,12 +42,14 @@ runs:
         if [ "${BRANCH_NAME}" = "main" ] || [ "${ret}" -eq 2 ]; then
             echo "Running production build or running build in repo without a staging branch"
             IMAGE_REV="latest"
-            TF_WD="terraform/workspaces/prod"
+            ENV="prod"
         else
             echo "Running staging build"
             IMAGE_REV="staging"
-            TF_WD="terraform/workspaces/stg"
+            ENV="stg"
         fi
+        
+        TF_WD="terraform/workspaces/${ENV}"
 
         TF_LF="${TF_WD}/.terraform.lock.hcl"
 
@@ -59,6 +64,7 @@ runs:
 
         echo "::set-output name=branch-name::$(echo $BRANCH_NAME)"
         echo "::set-output name=image-rev::$(echo $IMAGE_REV)"
+        echo "::set-output name=env::$(echo $ENV)"
         echo "::set-output name=tf-workingdir::$(echo $TF_WD)"
         echo "::set-output name=tf-lockfile::$(echo $TF_LF)"
         echo "::set-output name=docker-load::$(echo $DOCKER_LOAD)"
