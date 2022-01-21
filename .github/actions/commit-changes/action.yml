@@ -1,0 +1,35 @@
+# File managed by Terraform
+# Contents will be overwritten automatically
+# To make changes edit the original template in internal-organization
+
+name: 'commit-changes'
+description: 'Commit changes to the GitHub repository'
+inputs:
+  github-token:
+    description: 'GitHub token to commit with'
+    required: true
+  commit-message:
+    description: 'Commit message'
+    default: 'Committed automatically during workspace run'
+    required: false
+runs:
+  using: "composite"
+  steps:
+    - uses: nick-invision/retry@v2
+      with:
+        timeout_seconds: 15
+        max_attempts: 3
+        retry_on: error
+        command: |
+          echo "$GITHUB_CONTEXT"
+          git clean -xdff
+          git stash -u
+          git checkout "${GITHUB_REF:11}"
+          git pull
+          git stash apply ||:
+          git config --global user.name 'Devops Bot'
+          git config --global user.email 'devops-bot@flipsidecrypto.com'
+          git remote set-url origin https://x-access-token:${{ inputs.github-token }}@github.com/$GITHUB_REPOSITORY
+          git add -A
+          git commit -am "${{ inputs.commit-message }}"
+          git push ||:
