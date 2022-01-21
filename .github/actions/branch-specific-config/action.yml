@@ -70,3 +70,4 @@ runs:
         echo "::set-output name=docker-load::$(echo $DOCKER_LOAD)"
         echo "::set-output name=docker-push::$(echo $DOCKER_PUSH)"
       shell: bash
+
