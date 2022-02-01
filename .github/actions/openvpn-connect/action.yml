@@ -5,10 +5,6 @@
 name: 'openvpn-connect'
 description: 'Connect to an OpenVPN server using a config file'
 inputs:
-  openvpn-version:
-    description: 'OpenVPN version to setup'
-    required: false
-    default: '2.4.7-1ubuntu2.20.04.2'
   openvpn-profile:
     description: 'OpenVPN profile (Must be base64-encoded)'
     required: true
