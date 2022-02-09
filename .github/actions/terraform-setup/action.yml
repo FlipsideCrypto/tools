@@ -11,10 +11,10 @@ inputs:
   github-token:
     description: 'GitHub token for pulling custom providers from Flipside repos'
     required: true
-  devops-bot-ssh-key:
+  ssh-private-key:
     description: 'Devops bot SSH key to use for pulling Flipside repos'
     required: true
-  devops-bot-known-hosts:
+  ssh-known-hosts:
     description: 'Devops bot known hosts to use for pulling Flipside repos'
     required: true
   snowflake-bot-rsa-key:
@@ -49,8 +49,8 @@ runs:
     - name: Install SSH key
       uses: shimataro/ssh-key-action@v2
       with:
-        key: ${{ inputs.devops-bot-ssh-key }}
-        known_hosts: ${{ inputs.devops-bot-known-hosts }}
+        key: ${{ inputs.ssh-private-key }}
+        known_hosts: ${{ inputs.ssh-known-hosts }}
         if_key_exists: replace
     - name: Install Snowflake RSA key
       uses: shimataro/ssh-key-action@v2
