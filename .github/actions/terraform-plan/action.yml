@@ -17,10 +17,10 @@ inputs:
   openvpn-profile:
     description: 'OpenVPN profile (Must be base64-encoded)'
     required: true
-  devops-bot-ssh-key:
+  ssh-private-key:
     description: 'Devops bot SSH key to use for pulling Flipside repos'
     required: true
-  devops-bot-known-hosts:
+  ssh-known-hosts:
     description: 'Devops bot known hosts to use for pulling Flipside repos'
     required: true
   snowflake-bot-rsa-key:
@@ -64,8 +64,8 @@ runs:
       with:
         working-directory: ${{ inputs.working-directory }}
         github-token: ${{ inputs.github-token }}
-        devops-bot-ssh-key: ${{ inputs.devops-bot-ssh-key }}
-        devops-bot-known-hosts: ${{ inputs.devops-bot-known-hosts }}
+        ssh-private-key: ${{ inputs.ssh-private-key }}
+        ssh-known-hosts: ${{ inputs.ssh-known-hosts }}
         snowflake-bot-rsa-key: ${{ inputs.snowflake-bot-rsa-key }}
         aws-access-key-id: ${{ inputs.aws-access-key-id }}
         aws-secret-access-key: ${{ inputs.aws-secret-access-key }}
