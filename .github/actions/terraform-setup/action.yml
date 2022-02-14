@@ -133,7 +133,7 @@ runs:
         node-version: "14.x"
     - uses: hashicorp/setup-terraform@v1
       with:
-        terraform_version: 1.0.2
+        terraform_version: 1.1.5
         terraform_wrapper: false
     - name: Setup Terraform plugin cache and local plugins root
       shell: bash
