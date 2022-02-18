@@ -15,6 +15,7 @@ runs:
     - name: Kill VPN connection
       shell: bash
       run: |
+        sudo touch ${{ inputs.openvpn-log }}
         sudo chmod 777 ${{ inputs.openvpn-log }}
         sudo killall openvpn
     - name: Upload VPN logs
