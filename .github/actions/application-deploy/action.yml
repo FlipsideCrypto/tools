@@ -1,0 +1,56 @@
+# File managed by Terraform
+# Contents will be overwritten automatically
+# To make changes edit the original template in internal-organization
+
+name: 'application-deploy'
+description: 'Application deployment'
+inputs:
+  manifest-file:
+    description: 'Manifest file'
+    required: true
+  repository-url:
+    description: 'Repository URL'
+    required: true
+  digest:
+    description: 'Repository image digest'
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Application deployment
+      run: |
+        set -eo pipefail
+
+        MANIFEST_FILE="${{ inputs.manifest-file }}"
+        REPOSITORY_URL="${{ inputs.repository-url }}"
+        DIGEST="${{ inputs.digest }}"
+
+        function export_json_to_env () {
+          service_name="$1"
+
+          while IFS=$'\t\n' read -r LINE; do
+              export "${LINE}"
+          done < <(
+              <"${MANIFEST_FILE}" jq \
+                  --compact-output \
+                  --raw-output \
+                  --monochrome-output \
+                  --from-file \
+                  <(echo ".[\"${service_name}\"] | to_entries | map(\"\(.key)=\(.value)\") | .[]")
+            )
+        }
+
+        echo "Deploying ${MANIFEST_FILE}"
+
+        mapfile -t services < <(jq -r 'keys[]' "$MANIFEST_FILE")
+
+        for service_name in "${services[@]}"; do
+          export_json_to_env "$service_name"
+          aws eks update-kubeconfig --name "$eks_cluster_name"
+          kubectl -n "$eks_cluster_namespace" set image "$k8s_deployment_name" "${k8s_container_name}=${REPOSITORY_URL}@${DIGEST}"
+          kubectl -n "$eks_cluster_namespace" rollout restart "$k8s_deployment_name"
+        done
+      shell: bash
+
+
