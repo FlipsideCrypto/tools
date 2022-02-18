@@ -26,6 +26,10 @@ outputs:
   docker-push:
     description: "Docker push"
     value: ${{ steps.branch-specific-config.outputs.docker-push }}
+  manifests-dir:
+    description: "Manifests directory for the environment"
+    value: ${{ steps.branch-specific-config.outputs.manifests-dir }}
+
 runs:
   using: "composite"
   steps:
@@ -61,6 +65,8 @@ runs:
           DOCKER_LOAD="true"
           DOCKER_PUSH="false"
         fi
+        
+        MANIFESTS_DIR="manifests/${ENV}"
 
         echo "::set-output name=branch-name::$(echo $BRANCH_NAME)"
         echo "::set-output name=image-rev::$(echo $IMAGE_REV)"
@@ -69,5 +75,5 @@ runs:
         echo "::set-output name=tf-lockfile::$(echo $TF_LF)"
         echo "::set-output name=docker-load::$(echo $DOCKER_LOAD)"
         echo "::set-output name=docker-push::$(echo $DOCKER_PUSH)"
+        echo "::set-output name=manifests-dir::$(echo $MANIFESTS_DIR)"
       shell: bash
-
