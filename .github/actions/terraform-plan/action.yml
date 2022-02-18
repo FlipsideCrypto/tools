@@ -91,4 +91,7 @@ runs:
       id: plan
       run: terraform plan -no-color
       working-directory: ${{ inputs.working-directory }}
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+        GITHUB_OWNER: "FlipsideCrypto"
 
