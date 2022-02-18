@@ -22,7 +22,6 @@ runs:
         retry_on: error
         command: |
           echo "$GITHUB_CONTEXT"
-          git clean -xdff
           git stash -u
           git checkout "${GITHUB_REF:11}"
           git pull
