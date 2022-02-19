@@ -8,9 +8,6 @@ inputs:
   manifest-file:
     description: 'Manifest file'
     required: true
-  repository-url:
-    description: 'Repository URL'
-    required: true
   digest:
     description: 'Repository image digest'
     required: true
@@ -23,7 +20,6 @@ runs:
         set -eo pipefail
 
         MANIFEST_FILE="${{ inputs.manifest-file }}"
-        REPOSITORY_URL="${{ inputs.repository-url }}"
         DIGEST="${{ inputs.digest }}"
 
         function export_json_to_env () {
@@ -48,9 +44,7 @@ runs:
         for service_name in "${services[@]}"; do
           export_json_to_env "$service_name"
           aws eks update-kubeconfig --name "$eks_cluster_name"
-          kubectl -n "$eks_cluster_namespace" set image "$k8s_deployment_name" "${k8s_container_name}=${REPOSITORY_URL}@${DIGEST}"
+          kubectl -n "$eks_cluster_namespace" set image "$k8s_deployment_name" "${k8s_container_name}=${repository_url}@${DIGEST}"
           kubectl -n "$eks_cluster_namespace" rollout restart "$k8s_deployment_name"
         done
       shell: bash
-
-
