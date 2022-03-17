@@ -1,20 +1,19 @@
 Package: metamaskConnectr
-Title: Simple shiny buttons to connect to an Ethereum wallet. Easy
-        Peasy.
+Title: Connect to ETH Wallet in a Shiny App
 Version: 0.0.0.9000
 Authors@R: 
     person(given = "Angela",
            family = "Minster",
            role = "cre",
            email = "angela@flipsidecrypto.com",
-           comment = c(ORCID = "1234567"))
-Description: What the package does (one paragraph).
+           comment = c(ORCID = "123456"))
+Description: Makes an input for shiny apps, which is a connection button.
 License: `use_gpl3_license()`
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.1.1
 Imports: htmltools, reactR, shiny
 NeedsCompilation: no
-Packaged: 2022-03-17 19:27:58 UTC; angelaminster
-Author: Angela Minster [cre] (1234567)
+Packaged: 2022-03-17 19:39:06 UTC; angelaminster
+Author: Angela Minster [cre] (123456)
 Maintainer: Angela Minster <angela@flipsidecrypto.com>
