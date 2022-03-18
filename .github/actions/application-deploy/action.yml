@@ -20,8 +20,19 @@ runs:
         set -eo pipefail
 
         MANIFEST_FILE="${{ inputs.manifest-file }}"
+        
+        if [ -z "$MANIFEST_FILE" ]; then
+          echo "No manifest file provided"
+          exit 1
+        fi
+        
         DIGEST="${{ inputs.digest }}"
-
+        
+        if [ -z "$DIGEST" ]; then
+          echo "No digest provided"
+          exit 1
+        fi
+        
         function export_json_to_env () {
           service_name="$1"
 
