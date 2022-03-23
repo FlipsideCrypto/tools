@@ -1,0 +1,93 @@
+# File managed by Terraform
+# Contents will be overwritten automatically
+
+name: 'terraform-plan'
+description: >-
+  Perform a Terraform plan and all precursors and setup of the environment and working directory.
+  Will result in an open OpenVPN connection to the FlipsideCrypto VPN server.
+  If this action is used the corresponding openvpn-kill action must be run after with 'if: always()'.
+inputs:
+  working-directory:
+    description: 'Terraform working directory in the repository'
+    required: true
+  github-token:
+    description: 'GitHub token for pulling custom providers from Flipside repos'
+    required: true
+  openvpn-profile:
+    description: 'OpenVPN profile (Must be base64-encoded)'
+    required: true
+  ssh-private-key:
+    description: 'Devops bot SSH key to use for pulling Flipside repos'
+    required: true
+  ssh-known-hosts:
+    description: 'Devops bot known hosts to use for pulling Flipside repos'
+    required: true
+  snowflake-bot-rsa-key:
+    description: 'Snowflake bot RSA key to use for the Terraform Snowflake provider'
+    required: true
+  aws-access-key-id:
+    description: >-
+      AWS Access Key ID. This input is required if running in the GitHub hosted environment.
+      It is optional if running in a self-hosted environment that already has AWS credentials,
+      for example on an EC2 instance.
+    required: false
+  aws-secret-access-key:
+    description: >-
+      AWS Secret Access Key. This input is required if running in the GitHub hosted environment.
+      It is optional if running in a self-hosted environment that already has AWS credentials,
+      for example on an EC2 instance.
+    required: false
+  aws-session-token:
+    description: 'AWS Session Token'
+    required: false
+  aws-region:
+    description: 'AWS Region, e.g. us-east-2'
+    required: true
+outputs:
+  openvpn-config:
+    description: 'OpenVPN config file'
+    value: ${{ steps.openvpn-connect.outputs.openvpn-config }}
+  openvpn-log:
+    description: 'OpenVPN log file'
+    value: ${{ steps.openvpn-connect.outputs.openvpn-log }}
+  snowflake-private-key-path:
+    description: 'Snowflake private key path'
+    value: ${{ steps.setup-terraform.outputs.snowflake-private-key-path }}
+    
+runs:
+  using: 'composite'
+  steps:
+    - name: Setup Terraform
+      uses: ./.github/actions/terraform-setup
+      id: setup-terraform
+      with:
+        working-directory: ${{ inputs.working-directory }}
+        github-token: ${{ inputs.github-token }}
+        ssh-private-key: ${{ inputs.ssh-private-key }}
+        ssh-known-hosts: ${{ inputs.ssh-known-hosts }}
+        snowflake-bot-rsa-key: ${{ inputs.snowflake-bot-rsa-key }}
+        aws-access-key-id: ${{ inputs.aws-access-key-id }}
+        aws-secret-access-key: ${{ inputs.aws-secret-access-key }}
+        aws-session-token: ${{ inputs.aws-session-token }}
+        aws-region: ${{ inputs.aws-region }}
+    - name: Terraform fmt
+      shell: bash
+      id: fmt
+      run: terraform fmt -recursive
+      working-directory: ${{ inputs.working-directory }}
+    - name: Terraform Validate
+      shell: bash
+      id: validate
+      run: terraform validate -no-color
+      working-directory: ${{ inputs.working-directory }}
+    - name: Connect to Flipside VPN server
+      uses: ./.github/actions/openvpn-connect
+      id: openvpn-connect
+      with:
+        openvpn-profile: ${{ inputs.openvpn-profile }}
+    - name: Terraform Plan
+      shell: bash
+      id: plan
+      run: terraform plan -no-color
+      working-directory: ${{ inputs.working-directory }}
+
