@@ -1,6 +1,3 @@
-# File managed by Terraform
-# Contents will be overwritten automatically
-
 name: 'write-file'
 description: 'Write a file to the runner filesystem and set permissions on it'
 inputs:

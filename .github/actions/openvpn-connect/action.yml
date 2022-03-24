@@ -1,6 +1,3 @@
-# File managed by Terraform
-# Contents will be overwritten automatically
-
 name: 'openvpn-connect'
 description: 'Connect to an OpenVPN server using a config file'
 inputs:
@@ -29,4 +26,3 @@ runs:
       run: |
         sudo openvpn --config ${{ steps.setup-openvpn.outputs.openvpn-config }} --log "$(pwd)/vpn.log" --daemon
         echo "::set-output name=openvpn-log::$(pwd)/vpn.log"
-

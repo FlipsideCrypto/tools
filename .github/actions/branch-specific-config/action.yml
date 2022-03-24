@@ -1,6 +1,3 @@
-# File managed by Terraform
-# Contents will be overwritten automatically
-
 name: 'branch-specific-config'
 description: 'Determine branch-specific configuration'
 outputs:

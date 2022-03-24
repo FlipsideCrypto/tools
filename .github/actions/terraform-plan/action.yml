@@ -1,6 +1,3 @@
-# File managed by Terraform
-# Contents will be overwritten automatically
-
 name: 'terraform-plan'
 description: >-
   Perform a Terraform plan and all precursors and setup of the environment and working directory.
@@ -90,4 +87,3 @@ runs:
       id: plan
       run: terraform plan -no-color
       working-directory: ${{ inputs.working-directory }}
-
