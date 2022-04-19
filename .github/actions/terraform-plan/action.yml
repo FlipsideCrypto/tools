@@ -85,5 +85,5 @@ runs:
     - name: Terraform Plan
       shell: bash
       id: plan
-      run: terraform plan -no-color
+      run: GITHUB_TOKEN="${{ inputs.github-token }}" GITHUB_OWNER="FlipsideCrypto" terraform plan -no-color
       working-directory: ${{ inputs.working-directory }}
