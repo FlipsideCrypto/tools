@@ -19,9 +19,6 @@ inputs:
   ssh-known-hosts:
     description: 'Devops bot known hosts to use for pulling Flipside repos'
     required: true
-  snowflake-bot-rsa-key:
-    description: 'Snowflake bot RSA key to use for the Terraform Snowflake provider'
-    required: true
   aws-access-key-id:
     description: >-
       AWS Access Key ID. This input is required if running in the GitHub hosted environment.
@@ -47,9 +44,6 @@ outputs:
   openvpn-log:
     description: 'OpenVPN log file'
     value: ${{ steps.openvpn-connect.outputs.openvpn-log }}
-  snowflake-private-key-path:
-    description: 'Snowflake private key path'
-    value: ${{ steps.setup-terraform.outputs.snowflake-private-key-path }}
     
 runs:
   using: 'composite'
@@ -62,7 +56,6 @@ runs:
         github-token: ${{ inputs.github-token }}
         ssh-private-key: ${{ inputs.ssh-private-key }}
         ssh-known-hosts: ${{ inputs.ssh-known-hosts }}
-        snowflake-bot-rsa-key: ${{ inputs.snowflake-bot-rsa-key }}
         aws-access-key-id: ${{ inputs.aws-access-key-id }}
         aws-secret-access-key: ${{ inputs.aws-secret-access-key }}
         aws-session-token: ${{ inputs.aws-session-token }}
