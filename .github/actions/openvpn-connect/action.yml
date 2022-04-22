@@ -8,9 +8,9 @@ outputs:
   openvpn-config:
     description: 'OpenVPN config file'
     value: ${{ steps.setup-openvpn.outputs.openvpn-config }}
-  openvpn-log:
-    description: 'OpenVPN log file'
-    value: ${{ steps.run-openvpn.outputs.openvpn-log }}
+  openvpn-log-dir:
+    description: 'OpenVPN log directory'
+    value: ${{ steps.run-openvpn.outputs.openvpn-log-dir }}
 
 runs:
   using: 'composite'
@@ -24,5 +24,7 @@ runs:
       shell: bash
       id: run-openvpn
       run: |
+        OPENVPN_LOG_DIR="${RUNNER_TEMP}/logs"
+        mkdir -p "$OPENVPN_LOG_DIR"
         sudo openvpn --config ${{ steps.setup-openvpn.outputs.openvpn-config }} --log "$(pwd)/vpn.log" --daemon
-        echo "::set-output name=openvpn-log::$(pwd)/vpn.log"
+        echo "::set-output name=openvpn-log-dir::${OPENVPN_LOG_DIR}"
