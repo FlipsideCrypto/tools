@@ -1,6 +1,7 @@
 # -*- mode: gitignore; -*-
 
 *.log
+**/logs
 
 # Terraform
 
