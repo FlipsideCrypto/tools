@@ -31,16 +31,6 @@ inputs:
   aws-region:
     description: 'AWS Region, e.g. us-east-2'
     required: true
-  openvpn-profile:
-    description: 'OpenVPN profile (Must be base64-encoded)'
-    required: true
-outputs:
-  openvpn-config:
-    description: 'OpenVPN config file'
-    value: ${{ steps.openvpn-connect.outputs.openvpn-config }}
-  openvpn-log-dir:
-    description: 'OpenVPN log directory'
-    value: ${{ steps.openvpn-connect.outputs.openvpn-log-dir }}
 
 runs:
   using: "composite"
@@ -217,8 +207,3 @@ runs:
       id: validate
       run: terraform validate -no-color
       working-directory: ${{ inputs.working-directory }}
-    - name: Connect to Flipside VPN server
-      uses: ./.github/actions/openvpn-connect
-      id: openvpn-connect
-      with:
-        openvpn-profile: ${{ inputs.openvpn-profile }}
