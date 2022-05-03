@@ -14,6 +14,6 @@ Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.1.1
 Imports: htmltools, reactR, shiny
 NeedsCompilation: no
-Packaged: 2022-03-17 19:39:06 UTC; angelaminster
+Packaged: 2022-05-03 14:14:17 UTC; angelaminster
 Author: Angela Minster [cre] (123456)
 Maintainer: Angela Minster <angela@flipsidecrypto.com>
