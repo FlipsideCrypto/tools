@@ -1,0 +1,46 @@
+name: 'openvpn-connect'
+description: 'Connect to an OpenVPN server using a config file'
+inputs:
+  openvpn-profile:
+    description: 'OpenVPN profile (Must be base64-encoded)'
+    required: true
+  openvpn-version:
+    description: 'OpenVPN version to install'
+    required: false
+    default: ''
+  cache-key:
+    description: 'Cache key'
+    required: false
+    default: ''
+outputs:
+  openvpn-config:
+    description: 'OpenVPN config file'
+    value: ${{ steps.setup-openvpn.outputs.openvpn-config }}
+  openvpn-log-dir:
+    description: 'OpenVPN log directory'
+    value: ${{ steps.run-openvpn.outputs.openvpn-log-dir }}
+  openvpn-version:
+    description: 'OpenVPN version'
+    value: ${{ steps.setup-openvpn.outputs.openvpn-version }}
+  cache-key:
+    description: 'Cache key'
+    value: ${{ steps.setup-openvpn.outputs.cache-key }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Setup OpenVPN
+      uses: ./.github/actions/openvpn-setup
+      id: setup-openvpn
+      with:
+        openvpn-profile: ${{ inputs.openvpn-profile }}
+        openvpn-version: ${{ inputs.openvpn-version }}
+        cache-key: ${{ inputs.cache-key }}
+    - name: Connect to VPN Server
+      shell: bash
+      id: run-openvpn
+      run: |
+        OPENVPN_LOG_DIR="${RUNNER_TEMP}/logs"
+        mkdir -p "$OPENVPN_LOG_DIR"
+        sudo openvpn --config ${{ steps.setup-openvpn.outputs.openvpn-config }} --log "$(pwd)/vpn.log" --daemon
+        echo "::set-output name=openvpn-log-dir::${OPENVPN_LOG_DIR}"
