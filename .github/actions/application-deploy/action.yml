@@ -1,0 +1,60 @@
+name: 'application-deploy'
+description: 'Application deployment'
+inputs:
+  manifest-file:
+    description: 'Manifest file'
+    required: true
+  digest:
+    description: 'Repository image digest'
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - uses: azure/setup-kubectl@v2.0
+      with:
+        version: 'v1.23.6'
+    - name: Application deployment
+      run: |
+        set -eo pipefail
+
+        MANIFEST_FILE="${{ inputs.manifest-file }}"
+        
+        if [ -z "$MANIFEST_FILE" ]; then
+          echo "No manifest file provided"
+          exit 1
+        fi
+        
+        DIGEST="${{ inputs.digest }}"
+        
+        if [ -z "$DIGEST" ]; then
+          echo "No digest provided"
+          exit 1
+        fi
+        
+        function export_json_to_env () {
+          service_name="$1"
+
+          while IFS=$'\t\n' read -r LINE; do
+              export "${LINE}"
+          done < <(
+              <"${MANIFEST_FILE}" jq \
+                  --compact-output \
+                  --raw-output \
+                  --monochrome-output \
+                  --from-file \
+                  <(echo ".[\"${service_name}\"] | to_entries | map(\"\(.key)=\(.value)\") | .[]")
+            )
+        }
+
+        echo "Deploying ${MANIFEST_FILE}"
+
+        mapfile -t services < <(jq -r 'keys[]' "$MANIFEST_FILE")
+
+        for service_name in "${services[@]}"; do
+          export_json_to_env "$service_name"
+          aws eks update-kubeconfig --name "$eks_cluster_name"
+          kubectl -n "$eks_cluster_namespace" set image "$k8s_deployment_name" "${k8s_container_name}=${repository_url}@${DIGEST}"
+          kubectl -n "$eks_cluster_namespace" rollout restart "$k8s_deployment_name"
+        done
+      shell: bash

@@ -1,0 +1,35 @@
+name: 'openvpn-kill'
+description: 'Kill a running connection to an OpenVPN server'
+inputs:
+  openvpn-log-dir:
+    description: 'OpenVPN log directory'
+    required: false
+    default: ""
+outputs:
+  openvpn-log-dir:
+    description: 'OpenVPN log directory'
+    value: ${{ steps.kill-openvpn.outputs.openvpn-log-dir }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Kill VPN connection
+      id: kill-openvpn
+      shell: bash
+      run: |
+        OPENVPN_LOG_DIR="${{ inputs.openvpn-log-dir }}"
+        
+        if [[ ! -z "$OPENVPN_LOG_DIR" ]]; then
+          OPENVPN_LOG_DIR="${RUNNER_TEMP}/logs"
+          mkdir -p "$OPENVPN_LOG_DIR"
+        fi
+        
+        sudo chmod -Rv 777 "$OPENVPN_LOG_DIR"
+        echo "::set-output name=openvpn-log-dir::${OPENVPN_LOG_DIR}"
+        
+        sudo killall openvpn
+    - name: Upload VPN logs
+      uses: actions/upload-artifact@v2
+      with:
+        name: VPN logs
+        path: ${{ steps.kill-openvpn.outputs.openvpn-log-dir }}
