@@ -1,0 +1,89 @@
+name: 'openvpn-setup'
+description: 'Setup OpenVPN'
+inputs:
+  openvpn-profile:
+    description: 'OpenVPN profile (Must be base64-encoded)'
+    required: true
+  openvpn-version:
+    description: 'OpenVPN version to install'
+    required: false
+    default: ''
+  cache-key:
+    description: 'Cache key'
+    required: false
+    default: ''
+outputs:
+  openvpn-config:
+    description: 'OpenVPN config file'
+    value: ${{ steps.environment-setup.outputs.openvpn-config }}
+  openvpn-version:
+    description: 'OpenVPN version'
+    value: ${{ steps.openvpn-version.outputs.openvpn-version }}
+  cache-key:
+    description: 'Cache key'
+    value: ${{ steps.openvpn-version.outputs.cache-key }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Get OpenVPN version
+      id: openvpn-version
+      shell: bash
+      run: |
+        set -euxo pipefail
+        
+        if [[ -z "$OPENVPN_VERSION" ]]; then
+          sudo apt-get update
+        
+          OPENVPN_VERSION="$(apt-cache policy openvpn | grep -oP '(?<=Candidate:\s)(.+)')"
+        fi
+        
+        echo "::set-output name=openvpn-version::${OPENVPN_VERSION}"
+        
+        if [[ -z "$CACHE_KEY" ]]; then
+          CACHE_KEY="${OPENVPN_VERSION}-$(date +%s)"
+        fi
+        
+        echo "::set-output name=cache-key::${CACHE_KEY}"
+      env:
+        CACHE_KEY: ${{ inputs.cache-key }}
+        OPENVPN_VERSION: ${{ inputs.openvpn-version }}
+    - name: Cache OpenVPN
+      uses: actions/cache@v2
+      id: cache-openvpn
+      with:
+        path: "~/openvpn"
+        key: openvpn-${{ steps.openvpn-version.outputs.cache-key }}
+        restore-keys: |
+          openvpn-${{ steps.openvpn-version.outputs.cache-key }}
+          openvpn-${{ steps.openvpn-version.outputs.openvpn-version }}
+          openvpn-
+    - name: Install OpenVPN
+      shell: bash
+      run: |
+        set -euxo pipefail
+        
+        if [[ "$CACHE_HIT" == 'true' && -f "~/openvpn/openvpn_${OPENVPN_VERSION}_amd64.deb" ]]; then
+          sudo dpkg -i ~/openvpn/*.deb
+        else
+          sudo apt-get update
+          sudo apt-get clean
+        
+          sudo apt-get install --yes openvpn="$OPENVPN_VERSION"
+        
+          mkdir -p ~/openvpn && rm -rfv ~/openvpn/*
+          sudo cp -v /var/cache/apt/archives/*.deb ~/openvpn/
+          sudo chown -Rv $(id -u):$(id -g) ~/openvpn/
+        fi
+      env:
+        CACHE_HIT: ${{ steps.cache-openvpn.outputs.cache-hit }}
+        CACHE_KEY: ${{ steps.openvpn-version.outputs.cache-key }}
+        OPENVPN_VERSION: ${{ steps.openvpn-version.outputs.openvpn-version }}
+    - name: Environment setup
+      id: environment-setup
+      shell: bash
+      run: |
+        echo $OPENVPN_EXTERNAL_CI_PROFILE | base64 -d > ${{ runner.temp	}}/config.ovpn
+        echo "::set-output name=openvpn-config::${{ runner.temp	}}/config.ovpn"
+      env:
+        OPENVPN_EXTERNAL_CI_PROFILE: ${{ inputs.openvpn-profile }}
