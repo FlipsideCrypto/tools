@@ -194,7 +194,7 @@ runs:
         set -e
         
         if $run_again -gt 0; then
-          terraform init --upgrade
+          terraform init --upgrade -migrate-state -force-copy
         fi
       working-directory: ${{ inputs.working-directory }}
     - name: Terraform fmt
@@ -205,5 +205,5 @@ runs:
     - name: Terraform Validate
       shell: bash
       id: validate
-      run: terraform validate -no-color
+      run: terraform validate
       working-directory: ${{ inputs.working-directory }}
