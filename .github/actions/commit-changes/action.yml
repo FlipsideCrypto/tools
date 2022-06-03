@@ -23,8 +23,11 @@ runs:
           git pull
           git stash apply ||:
           git config --global user.name 'Devops Bot'
-          git config --global user.email 'devops-bot@flipsidecrypto.com'
-          git remote set-url origin https://x-access-token:${{ inputs.github-token }}@github.com/$GITHUB_REPOSITORY
+          git config --global user.email 'devops-bot@users.noreply.github.com'
+          git remote set-url origin "git@github.com:${GITHUB_REPOSITORY}.git"
+
+
+
           git add -A
           git commit -am "${{ inputs.commit-message }}"
           git push ||:
