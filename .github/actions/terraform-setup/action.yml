@@ -194,7 +194,7 @@ runs:
         set -e
         
         if $run_again -gt 0; then
-          terraform init --upgrade -migrate-state -force-copy
+          terraform init --upgrade
         fi
       working-directory: ${{ inputs.working-directory }}
     - name: Terraform fmt
