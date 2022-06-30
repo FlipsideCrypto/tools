@@ -116,86 +116,11 @@ runs:
         node-version: "14.x"
     - uses: hashicorp/setup-terraform@v1
       with:
-        terraform_version: 1.1.5
-        terraform_wrapper: false
-    - name: Setup Terraform plugin cache and local plugins root
-      shell: bash
-      run: |
-        echo 'plugin_cache_dir="$HOME/.terraform.d/plugin-cache"' > ~/.terraformrc
-        mkdir --parents ~/.terraform.d/plugin-cache
-        mkdir --parents ~/.terraform.d/plugins/terraform.flipsidecrypto.com/local
-    - name: Cache Terraform
-      uses: actions/cache@v2
-      with:
-        path: |
-          ~/.terraform.d/plugin-cache
-          ~/.terraform.d/plugins
-        key: ${{ runner.os }}-terraform-v2-${{ hashFiles('${{ inputs.working-directory }}/.terraform.lock.hcl') }}
-    - name: Download latest custom Terraform providers
-      shell: bash
-      run: |
-        set -euxo pipefail
-        
-        for provider_bin in terraform-provider-googleworkspace; do
-          provider_name="${provider_bin##*-}"
-        
-          for platform in linux_amd64 darwin_amd64; do
-            provider_dir="${HOME}/.terraform.d/plugins/terraform.flipsidecrypto.com/local/${provider_name}/9.99.9/${platform}"
-            provider_bin_path="${provider_dir}/${provider_bin}"
-        
-            if [ -x "${provider_bin_path}" ]; then
-              echo "${provider_bin_path} restored from cache"
-            else
-              mkdir -p custom-providers
-              rm -rf custom-providers/*
-              gh release download --pattern "${provider_bin}_*_${platform}.zip" --repo "FlipsideCrypto/${provider_bin}" --dir ./custom-providers
-              mkdir -pv "$provider_dir"
-          
-              cd custom-providers
-              unzip -o "*.zip"
-              ls -lhat ./
-              mv -fv "$provider_bin" "$provider_bin_path"
-              cd -
-          
-              rm -rf custom-providers
-              chmod +x "$provider_bin_path"
-            fi
-          done
-        
-          set +e
-          if ! terraform init --upgrade; then
-            rm -f .terraform.lock.hcl ||:
-            terraform providers lock -platform=darwin_amd64 -platform=linux_amd64 "terraform.flipsidecrypto.com/local/${provider_name}"
-          fi
-          set -e
-        done
-      working-directory: ${{ inputs.working-directory }}
-      env:
-        GITHUB_TOKEN: ${{ inputs.github-token }}
+        terraform_version: 1.2.4
     - name: Terraform Init
       shell: bash
       id: init
-      run: |
-        set -x
-        set +e
-        
-        run_again=0
-        
-        if ! terraform init --upgrade; then
-          rm -f .terraform.lock.hcl ||:
-          terraform providers lock -platform=darwin_amd64 -platform=linux_amd64
-          run_again=1
-        fi
-        set -e
-        
-        if $run_again -gt 0; then
-          terraform init --upgrade
-        fi
-      working-directory: ${{ inputs.working-directory }}
-    - name: Terraform fmt
-      shell: bash
-      id: fmt
-      run: terraform fmt -recursive
+      run: terraform init --upgrade
       working-directory: ${{ inputs.working-directory }}
     - name: Terraform Validate
       shell: bash
