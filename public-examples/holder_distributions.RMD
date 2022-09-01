@@ -1,0 +1,333 @@
+---
+title: "Exploring Governance Model Distributions"
+author: "Eric Stone"
+date: '2022-08-31'
+output: html_document
+---
+
+## Demonstrating R + ShroomDK
+
+We are going to use histograms, density plots, and a modified 
+Receiver Operating Characteristic (or ROC) curve to understand and compare 
+the wealth distributions of a few popular ERC-20 and NFT-based tokens.
+
+The idea here is to understand whether one model or the other results in 
+better setups for more egalitarian governance.
+
+This part is a bit arbitrary, but as you'll see, by using [@flipsidecrypto](https://twitter.com/flipsidecrypto)'s
+ShroomDK API, it's incredibly easy for you to fork this, add other projects
+and get more creative with the visualizations and stats.
+
+I'll walk you thru how to set it up in R below, but you can go to [sdk.flipsidecrypto.xyz](https://sdk.flipsidecrypto.xyz/shroomdk)
+to mint your API key and get started first if you want to follow along.
+
+For this exercise I'm going to use 3 active NFT projects with different floors (
+moonbirds, nouns, and bgans), and compare to 3 prominent governance tokens for
+major defi projects (1inch, aave, and comp).
+
+FIRST SOME SETUP
+
+```{r setup, include=FALSE, echo=TRUE}
+### ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ####
+### THIS requires a free flipside api key to run queries ###
+### ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ####
+
+# flipside crypto's massive open dataset via R
+# (free to all: https://sdk.flipsidecrypto.xyz/shroomdk)
+# follow the setup steps for the R SDK 
+#   -> here https://docs.flipsidecrypto.com/shroomdk-sdk/sdks/r
+# once you have that set up this should run!
+
+# 🐍 there's a package for python too.. we bilingual
+# https://docs.flipsidecrypto.com/shroomdk-sdk/sdks/python
+
+#load required packages
+#one-time setup for shroomDK
+if(FALSE){
+  library(devtools) # install if you haven't already
+  devtools::install_github(repo = 'FlipsideCrypto/sdk', subdir = 'r/shroomDK')
+  #remember to save your api key to GIT IGNORED location
+  #and create an object to refer to it
+  api_key <- readLines("shroomdk.key")
+  
+  #this helper function is the most straightforward way to query the database
+  #  --> shroomDK::auto_paginate_query(query, api_key) # <- pulls up to 1M rows of a query & attempts to make it a nice data frame. 
+  #explore the data in a sql editor at https://flipside.new
+}
+
+library(shroomDK)
+library(magrittr)
+library(sde)
+library(sn)
+library(grid)
+library(quantmod)
+library(data.table)
+library(ggplot2)
+api_key <- readLines("shroomdk.key") 
+options(scipen = 999)
+
+color.pallet <- c("#1AB9FF", "#D17DFE", "#53E1AE",
+                  "#FCC003", "orange", "#DCF180", 
+                  "#63528C", "pink")
+```
+
+
+### Get the data and play around a bit
+
+Now let's get some data into our environment and see what we can see!
+
+```{r collect_explore}
+#our own table to keep track of the projects we're observing/comparing
+contracts <- data.table(
+  project_name = c("moonbirds","nouns","bgans",
+                   "aave","comp","1inch"),
+  type = c("nft","nft","nft","gov","gov","gov"),
+  contract_address = c(
+    tolower('0x23581767a106ae21c074b2276D25e5C3e136a68b'),
+    tolower('0x9C8fF314C9Bc7F6e59A9d9225Fb22946427eDC03'),
+    tolower('0x31385d3520bCED94f77AaE104b406994D8F2168C'),
+    tolower('0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9'),
+    tolower('0xc00e94Cb662C3520282E6f5717214004A7f26888'),
+    tolower('0x111111111117dC0aa78b770fA6A738034120C302')
+  )
+)
+
+#let's consider any holder that has been active in the last 6 months
+holder.data <- data.table(
+  shroomDK::auto_paginate_query(
+    paste0(
+      "select *
+      from ethereum.core.ez_current_balances
+      where last_activity_block_timestamp > current_date - (6 * 31)
+      and contract_address in ('",paste0(
+        contracts$contract_address, collapse = "','"
+      ),"');"
+    ),
+    api_key
+  )
+)
+
+#here's a similar query in the flipside app (obviously not able to reference our contracts table)
+# https://app.flipsidecrypto.com/velocity/queries/d0720e7e-df2b-430b-a82b-62c6b78c1cd1
+
+#short cleanup process
+setnames(holder.data, tolower(names(holder.data))) #because i don't like uppercase names
+holder.data[ contract_address %in% contracts[ type == "nft" ]$contract_address,
+             current_bal := current_bal_unadj ] #for NFTs the unadjusted balance is the number of holders
+holder.data <- merge(
+  holder.data,
+  contracts,
+  by = "contract_address"
+) #make sure i've got the right names and classes going
+
+# holy cow now we can look at histograms what is this
+ggplot(holder.data, aes(x = current_bal, fill = type)) + 
+  geom_histogram( bins = 20 ) +
+  facet_wrap( ~ project_name, scales = "free_x", ncol = 2 ) +
+  scale_fill_manual(values = color.pallet) +
+  theme_light() +
+  theme(legend.position = "top")
+
+#this makes me want to look at governance vs nft first
+ggplot(holder.data, aes(x = current_bal, fill = type)) + 
+  geom_histogram( bins = 20 ) +
+  facet_wrap( ~ type, scales = "free_x", ncol = 2 ) +
+  scale_fill_manual(values = color.pallet) +
+  theme_light() +
+  theme(legend.position = "top")
+
+#as expected most holders hold small amounts with long tails
+# of larger accounts
+
+#this is more pronounced with our governance tokens than NFTs
+
+#but to get a sense of the shapes we need to look at 
+#a log-adjusted x axis
+
+ggplot(holder.data[ type == 'gov' ],aes(x = current_bal)) + 
+  geom_histogram( bins = 20 ) +
+  facet_wrap( ~ project_name, scales = "fixed", ncol = 1 ) +
+  theme_light() +
+  scale_x_log10() +
+  scale_fill_manual(values = color.pallet) +
+  theme(
+    legend.position = "top",
+    axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)
+  )
+
+#now that we zoom in, we clearly need to eliminate tiny amounts
+#even a floor of .01 tokens gives us a better view
+
+ggplot(holder.data[ type == 'gov' & current_bal > .01 ],
+       aes(x = current_bal, fill = project_name)) + 
+  geom_density( alpha = .4 ) +
+  theme_light() +
+  scale_x_log10() +
+  scale_fill_manual(values = color.pallet) +
+  theme(
+    legend.position = "top",
+    axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)
+  )
+
+ggplot(holder.data[ type == 'nft' & current_bal > .01 ],
+       aes(x = current_bal, fill = project_name)) + 
+  geom_density( alpha = .4 ) +
+  theme_light() +
+  scale_x_log10() +
+  scale_fill_manual(values = color.pallet) +
+  theme(
+    legend.position = "top",
+    axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)
+  )
+
+
+#this is more helpful
+#comp clearly has fewer active 6 month holders than aave
+#confirm:
+holder.data[ type == "gov" & current_bal > .01,
+             list(six_mo_active_holders = .N),
+             by = project_name ]
+
+#but their distribution shapes are uncannily similar! not a huge surprise
+
+#what is perhaps more interesting is the holder distributions of 
+#NFTs-focused-on-community-participation vs. two active governance tokens
+#for significant lending protocols
+
+#now we'll see some differences..
+ggplot(holder.data[ current_bal > .01 & current_bal < 100 ],
+       aes(x = current_bal, fill = type)) + 
+  geom_density( alpha = .4 ) +
+  theme_light() +
+  scale_x_log10() +
+  scale_fill_manual(values = color.pallet) +
+  theme(
+    legend.position = "top",
+    axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)
+  )
+```
+
+## Going Deeper
+
+Now that we've had a look around we realize we need a couple things to do this
+properly, namely:
+
+1. Percentage based comparisons of supply distribution (absolutes are all over the place here)
+2. Address Labels (to account for non-user-controled tokens as best as possible)
+
+```{r deepR}
+
+#what do we actually care about when comparing these two?
+#right! percent of the supply owned by active addresses
+holder.data[
+  ,percent_supply := current_bal / sum(current_bal),
+  by = contract_address ]
+
+#ideally, you'd want a) more individual participants
+#and b) a "shorter-tailed" holder distribution
+#for any of these projects
+#and from this view it would appear the NFT projects have a significant edge!
+
+#but given the annoying shapes of these distributions, let's plot them a different way
+#cumulative percent of supply against cumulative percent of users:
+#the closer this curve to a 45 degree line the better
+#in terms of egalitarian token distribution
+
+#so let's get cumulative ownership percentages calculated:
+setorderv(holder.data, cols = c("contract_address", "percent_supply"), order = c(1L,-1L))
+holder.data[,supply_cumulative := cumsum(percent_supply), by = contract_address ]
+holder.data[,users_cumulative := 1:.N / .N, by = contract_address ]
+
+ggplot(
+  holder.data,
+  aes(y = supply_cumulative, x = users_cumulative,
+           color = project_name, 
+           linetype = type)) +
+  scale_color_manual(values = color.pallet) +
+  geom_line( size = 1 ) +
+  theme_light()
+
+#what else do we need? address labels so that we're eliminate treasury
+#and exchange hot/cold wallets, pools, and reserves from both sets
+
+#let's subset to addresses that hold meaningful amounts of the tokens
+addy.labels <- data.table(
+  shroomDK::auto_paginate_query(
+    paste0(
+      "select *
+      from ethereum.core.dim_labels
+      where address in ('",paste0(
+        unique(c(
+          holder.data[ type == 'nft' & current_bal > 3 ]$user_address,
+          holder.data[ type == 'gov' & percent_supply > .001 ]$user_address
+        )), collapse = "','"
+      ),"');"
+    ),
+    api_key
+  )
+)
+setnames(addy.labels, tolower(names(addy.labels)))
+
+holder.data <- merge(
+  holder.data,
+  addy.labels[ ,list(address,address_name,label_subtype)],
+  by.x = "user_address",
+  by.y = "address",
+  all.x = TRUE
+)
+
+holder.data.adj <- holder.data[(address_name == 'gnosis safe: general contract' |
+                                  is.na(address_name))][ user_address != "0x26a78d5b6d7a7aceedd1e6ee3229b372a624d8b7" ] #clearly a kraken address
+setorderv(holder.data.adj, cols = c("contract_address", "percent_supply"), order = c(1L,-1L))
+holder.data.adj[ ,percent_supply := current_bal / sum(current_bal), by = contract_address ]
+holder.data.adj[ ,supply_cumulative := cumsum(percent_supply), by = contract_address ]
+holder.data.adj[ ,users_cumulative := 1:.N / .N, by = contract_address ]
+
+ggplot(
+  holder.data.adj,
+  aes(y = supply_cumulative, x = users_cumulative,
+      color = project_name, 
+      linetype = type)) +
+  scale_color_manual(values = color.pallet) +
+  geom_line( size = 1 ) + 
+  ggtitle("Distribution of Supply as Percentages (labeled addys removed)") +
+  theme_light()
+
+```
+
+
+### Wrapping up for now
+
+There's obviously a lot more we can do here, but part of the point is I'm
+just scratching the surface, and putting this somehwere you can fork it,
+recreate it with your own ShroomDK key (free!), and do what you like. 
+
+Expand, build, ignore, whatever.
+
+In the last snippet here I'm going to calculate the respective areas under
+each curve and look at a couple different metrics to summarize holders.
+
+IF YOU WANTED TO GO DEEPER
+the next logical step is to incorporate actual governance participation and voting
+(worth noting that flipside has Snapshot data in its DB as well)
+
+```{r summary}
+library(zoo)
+
+contracts$auc_supply <- unlist(lapply(contracts$project_name, function(x){
+  sum(
+    diff( holder.data.adj[ project_name == x ]$users_cumulative ) *
+      rollmean( holder.data.adj[ project_name == x ]$supply_cumulative, 2 )
+  )
+}))
+
+contracts$n_control_95 <- unlist(lapply(contracts$project_name, function(x){
+  nrow(holder.data.adj[ project_name == x & supply_cumulative <= .95 ])
+})) 
+contracts
+```
+Perhaps the most unexpected takeaway I have from this EDA is how good it makes moonbirds look.
+Kudos to them, but that floor.. is too.. high... innit.
+
+[@theericstone](https://twitter.com/theericstone) if you like
+
