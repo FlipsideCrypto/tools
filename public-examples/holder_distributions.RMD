@@ -16,7 +16,10 @@ better setups for more egalitarian governance.
 
 This part is a bit arbitrary, but as you'll see, by using [@flipsidecrypto](https://twitter.com/flipsidecrypto)'s
 ShroomDK API, it's incredibly easy for you to fork this, add other projects
-and get more creative with the visualizations and stats.
+and get more creative with the visualizations and stats. 
+
+For example: This R document is available to fork in flipside's public tools repo. Have at it 🤓s!
+[github.com/FlipsideCrypto/tools/tree/main/public-examples](https://github.com/FlipsideCrypto/tools/tree/main/public-examples)
 
 I'll walk you thru how to set it up in R below, but you can go to [sdk.flipsidecrypto.xyz](https://sdk.flipsidecrypto.xyz/shroomdk)
 to mint your API key and get started first if you want to follow along.
