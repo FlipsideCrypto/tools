@@ -36,7 +36,7 @@ SELECT
        when tx.tx_to = '6JZoszTBzkGsskbheswiS6z2LRGckyFY4SpEGiLZqA9p' then 'bonk new airdrop address'
        when tx.tx_to = 'BqnpCdDLPV2pFdAaLnVidmn3G93RP2p5oRdGEY2sJGez' then 'orca bonk-sol pool'
        when tx.tx_to = '5P6n5omLbLbP4kaPGL8etqQAHEx2UCkaUyvjLDnwV4EY' then 'orca bonk-usdc pool'
-       when tx.tx_to = '2PFvRYt5h88ePdQXBrH3dyFmQqJHTNZYLztE847dHWYz' then 'dex bonk-usdc pool' #<-- this is saros
+       when tx.tx_to = '2PFvRYt5h88ePdQXBrH3dyFmQqJHTNZYLztE847dHWYz' then 'dex bonk-usdc pool' -- this is saros
        when tx.tx_to = 'DBR2ZUvjZTcgy6R9US64t96pBEZMyr9DPW6G2scrctQK' then 'bonk dao wallet'
        when tx.tx_to = '4CUMsJG7neKqZuuLeoBoMuqufaNBc2wdwQiXnoH4aJcD' then 'bonk team wallet'
        when tx.tx_to = '2yBBKgCwGdVpo192D8WZeAtqyhyP8DkCMnmTLeVYfKtA' then 'bonk marketing wallet'
