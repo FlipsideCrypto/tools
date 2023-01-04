@@ -64,7 +64,7 @@ solana.core.fact_transfers tx
 where tx.block_timestamp > '2022-12-24'
 and tx.mint = 'DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263'
 group by 1,2,3,4,5,6,7;"),
-  api_key = readLines('~/data_science/util/shroomdk.key')
+  api_key = readLines('shroomdk.key') #get free api key at sdk.flipsidecrypto.xyz
 )
 bonk.xfers <- as.data.table(bonk.xfers)
 setnames(bonk.xfers, tolower(names(bonk.xfers)))
@@ -95,9 +95,13 @@ bonk.xfers[ to_label_type == 'dex' |
 bonk.xfers[ from_label == "unlabeled", from_group := 'users' ]
 bonk.xfers[ to_label == "unlabeled", to_group := 'users' ]
 
+#crucial not to over-label addresses as airdrop recipients
+#so we do this only for otherwise unlabeled addresses
 bonk.xfers[ from_label == "unlabeled" & from_label_subtype == 'airdrop recipient', from_group := 'airdrop recipient' ]
 bonk.xfers[ to_label == "unlabeled" & to_label_subtype == 'airdrop recipient', to_group := 'airdrop recipient' ]
 
+#this is marginal in terms of volume, but 
+#noticed a few nft addresses receiving and sending BONK around
 bonk.xfers[ from_label_type == "nft", from_group := 'nft_projects' ]
 bonk.xfers[ to_label_type == "nft", to_group := 'nft_projects' ]
 
@@ -112,18 +116,22 @@ bubble.data <- bonk.xfers[
 bubble.data[,sum(token_value),by = "from_group,to_group"][order(V1,decreasing = T)]
 
 bubble.data[,from_to := paste(from_group,to_group,sep = "_X_"),by = "from_group,to_group"]
+
+#optionally plot the to/from groups
 # ggplot(bubble.data, aes(x = xfer_date, y = token_value, group = from_to, fill = from_to)) +
 #   geom_bar(stat = "identity",position = "dodge") +
 #   theme(legend.position = "none")
 
 
-# Sanity Check
+# This is both a sanity check
+# and helpful for putting the proper group names into the viz later
 c(bubble.data$from_group,bubble.data$to_group) %>% unique() #groups
 setnames(bubble.data, "token_value", "xfer_volume")
 
 bubble.data[ ,from_group := str_replace_all(from_group,' ','_') ]
 bubble.data[ ,to_group := str_replace_all(to_group,' ','_') ]
 
+#boring json conversion that looks simple but took forever json is annoying
 daily.row.empty <- "{ 'src': '%s', 'dst': '%s', 'num': %s },"
 
 bubble.data[, row_num := 1:.N]
@@ -145,7 +153,9 @@ new.to.save <- paste0("const data = {
                         steps: ",
                       bubbles.json,
                       "}")
-writeLines(new.to.save,con = "~/data_science/data/bonk_bubbles.json")
+
+#save it!
+writeLines(new.to.save,con = "~/bonk_bubbles.json")
 bubble.data[ ,sum(xfer_volume), by = "to_group,from_group"]
 
 
